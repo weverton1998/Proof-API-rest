@@ -36,11 +36,17 @@ $routes->set404Override();
 // We get a performance increase by specifying the default
 // route since we don't have to scan directories.
 //$routes->get('/', 'ControlaIps::get');
+$routes->get('/', 'ControlaIps::get');
 
 //ips REST
 $routes->get('get', 'ControlaIps::get');
-$routes->get('filtra', 'ControlaIps::filtrar');
+$routes->get('filtrar', 'ControlaIps::filtrar');
 $routes->post('post', 'ControlaIps::post');
+
+//ips tabela
+$routes->get('tabela', 'Tabela::exibir');
+$routes->get('tabela/cadastrar', 'Tabela::cadastrar');
+$routes->get('tabela/filtrar', 'Tabela::filtrar');
 
 /*
  * --------------------------------------------------------------------

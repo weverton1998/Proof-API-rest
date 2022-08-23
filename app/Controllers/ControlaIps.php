@@ -10,7 +10,6 @@ class ControlaIps extends ResourceController
 {
     private $todosIpsModel;
     private $filtarIpsModel;
-    private $senha = '123456';
 
     public function __construct()
     {
@@ -18,23 +17,59 @@ class ControlaIps extends ResourceController
         $this->filtrarIpsModel = new FiltrarIpsModel();
     }
 
-    private function _verificaSenha()
-    {
-        return $this->request->getHeaderLine('senha') == $this->senha;
-    }
-
-
     //get para retornar todos os ips
     public function get()
     {
-        ControlaIps::getIp1();
-        $ips = $this->todosIpsModel->findAll();
+        $retorno = [];
 
-        return $this->response->setJson($ips);
+        try
+        {
+            //os gets podem lancar uma execao
+            //essa chamada chama os dois gets em sequencia
+            ControlaIps::getIp1();
+ 
+            $retorno =  $this->todosIpsModel->findAll();
+        }
+        catch (Exception $e)
+        {
+            $retorno = [
+                'titulo' => 'erro',
+                'msg' => 'os ips so podem ser capturados a cada 30 minutos',
+                'erro' => [
+                    'exception' => $e->getMessage()
+                ],
+                'rotaAlternativa' => 'para acessar os dados da ultima capitura acessse: tabela/exibir'
+            ]; 
+        }
+
+        return $this->response->setJson($retorno);
+    }
+
+    //pega ips do site torlist
+    private function getIp1()
+    {
+        //pega os ips q a pagina retorna
+        //essa requisicao pode lencar uma execao, pois a pagina so permite retornar os ips a cada 30 minutos
+        $conteudo = file_get_contents('https://www.dan.me.uk/torlist/'); 
+
+        //limpa as tabelas do bd caso nao tenha lancado a execao
+        $this->todosIpsModel->truncate();
+
+        //converte os dados que a pagina retorno em formato de String para um array
+        $ips = explode("\n", $conteudo);
+        
+        //percorre o array de ips salvando no banco de dados
+        foreach ($ips as $ip) {
+            $this->todosIpsModel->save([
+                'ip' => $ip
+            ]);
+        }    
+
+        ControlaIps::getIp2();
     }
 
     //pega ips do site onionoo
-    private function getIp1()
+    private function getIp2()
     {
         //pega os dados que a pagina retorna
         $conteudo = file_get_contents('https://onionoo.torproject.org/summary?limit=5000');
@@ -57,25 +92,6 @@ class ControlaIps extends ResourceController
                 'ip' => $a[0]
             ]);
         }  
-
-        //ControlaIps::getIp2();
-    }
-
-    //pega ips do site torlist
-    private function getIp2()
-    {
-        //pega os ips q a pagina retorna
-        $conteudo = file_get_contents('https://www.dan.me.uk/torlist/'); 
-       
-        //converte os dados que a pagina retorno em formato de String para um array
-        $ips = explode("\n", $conteudo);
-        
-        //percorre o array de ips salvando no banco de dados
-        foreach ($ips as $ip) {
-            $this->todosIpsModel->save([
-                'ip' => $ip
-            ]);
-        }    
     }
 
     //inserre um novo ip
@@ -83,49 +99,38 @@ class ControlaIps extends ResourceController
     {
         $retorno = [];
 
-        //valida a senha
-        if($this->_verificaSenha() == true) 
+        //pega ip inserido na requisicao
+        $novoIp = $this->request->getpost();
+        
+        try
         {
-            //pega ip inserido na requisicao
-            $novoIp = $this->request->getpost();
-
-            try
+            if($this->filtrarIpsModel-> save([
+                'ip' => $novoIp
+            ]))
             {
-                if($this->filtrarIpsModel-> save([
-                    'ip' => $novoIp
-                ]))
-                {
-                    $retorno = [
-                        'titulo' => 'secesso',
-                        'msg' => 'Ip adicionado com sucesso'
-                    ];
-                }
-                else
-                {
-                    $retorno = [
-                        'titulo' => 'erro',
-                        'msg' => 'erro ao salvar o ip',
-                        'erro' => $this->filtrarIpsModel->errors()
-                    ];
-                }
+                $retorno = [
+                    'titulo' => 'secesso',
+                    'msg' => 'Ip adicionado com sucesso'
+                ];
             }
-            catch (Exception $e)
+            else
             {
                 $retorno = [
                     'titulo' => 'erro',
                     'msg' => 'erro ao salvar o ip',
-                    'erro' => [
-                        'exception' => $e->getMessage()
-                    ]
-                ]; 
+                    'erro' => $this->filtrarIpsModel->errors()
+                ];
             }
         }
-        else
+        catch (Exception $e)
         {
             $retorno = [
-                'titulo' => 'error',
-                'msg' => 'Senha invalida'
-            ];
+                'titulo' => 'erro',
+                'msg' => 'erro ao salvar o ip',
+                'erro' => [
+                    'exception' => $e->getMessage()
+                ]
+            ]; 
         }
 
         return $this->response->setJSON($retorno);
