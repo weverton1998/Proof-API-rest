@@ -36,23 +36,23 @@ class Tabela extends BaseController
 
     public function filtrar()
     {
-        $filtros = $this->filtrarIpsModel->findAll();
         $ips = $this->todosIpsModel->findAll();
-        $resultado = [];
+        $filtros = $this->filtrarIpsModel->findAll();
 
         foreach ($ips as $ip){
-           foreach ($filtros as $filtro)
+            foreach ($filtros as $filtro)
             {
-                if($ip['ip'] != $filtro['ip'])
+                if($ip['ip'] == $filtro['ip'])
                 {
-                    array_push($resultado, $ip);
+                    $id = $ip['id'];
+                    unset($ips[$id]);
                 } 
             } 
         }
-
+        
         echo view ('nav');
         echo view ('tabela',[
-            'ips' => $resultado
+            'ips' => $ips
         ]);
     }
 }

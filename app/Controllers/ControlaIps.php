@@ -26,7 +26,7 @@ class ControlaIps extends ResourceController
         {
             //os gets podem lancar uma execao
             //essa chamada chama os dois gets em sequencia
-            ControlaIps::getIp1();
+            ControlaIps::getIp2();
  
             $retorno =  $this->todosIpsModel->findAll();
         }
@@ -133,7 +133,7 @@ class ControlaIps extends ResourceController
             ]; 
         }
 
-        return $this->response->setJSON($retorno);
+        return $this->response->setJson($retorno);
     }
     
     //filtra os ips de acordo com os ips inseridos
@@ -144,15 +144,16 @@ class ControlaIps extends ResourceController
         $resultado = [];
 
         foreach ($ips as $ip){
-           foreach ($filtros as $filtro)
+            foreach ($filtros as $filtro)
             {
-                if($ip['ip'] != $filtro['ip'])
+                if($ip['ip'] == $filtro['ip'])
                 {
-                    array_push($resultado, $ip);
+                    $id = $ip['id'];
+                    unset($ips[$id]);
                 } 
             } 
         }
-        
-        return $this->response->setJson($resultado);
+   
+        return $this->response->setJson($ips);
     }
 }
