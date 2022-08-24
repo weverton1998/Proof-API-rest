@@ -26,7 +26,7 @@ class ControlaIps extends ResourceController
         {
             //os gets podem lancar uma execao
             //essa chamada chama os dois gets em sequencia
-            ControlaIps::getIp2();
+            ControlaIps::getIp1();
  
             $retorno =  $this->todosIpsModel->findAll();
         }
