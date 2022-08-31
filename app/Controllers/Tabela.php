@@ -20,11 +20,11 @@ class Tabela extends BaseController
 
     public function exibir()
     {
-        $ips = $this->todosIpsModel->findAll();
-
         echo view ('nav');
         echo view ('tabela',[
-            'ips' => $ips
+            'ips' => $this->todosIpsModel->paginate(10),
+            'pager' => $this->todosIpsModel->pager,
+            'titulo' => 'Tabela com todos ips'
         ]);
     }
 
@@ -51,8 +51,9 @@ class Tabela extends BaseController
         }
         
         echo view ('nav');
-        echo view ('tabela',[
-            'ips' => $ips
+        echo view ('filtro',[
+            'ips' => $ips,
+            'titulo' => 'Tabela com os ips filtrados'
         ]);
     }
 }

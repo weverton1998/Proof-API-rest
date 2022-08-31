@@ -26,7 +26,7 @@ class ControlaIps extends ResourceController
         {
             //os gets podem lancar uma execao
             //essa chamada chama os dois gets em sequencia
-            ControlaIps::getIp1();
+            ControlaIps::getIp2();
  
             $retorno =  $this->todosIpsModel->findAll();
         }
@@ -57,13 +57,8 @@ class ControlaIps extends ResourceController
 
         //converte os dados que a pagina retorno em formato de String para um array
         $ips = explode("\n", $conteudo);
-        
-        //percorre o array de ips salvando no banco de dados
-        foreach ($ips as $ip) {
-            $this->todosIpsModel->save([
-                'ip' => $ip
-            ]);
-        }    
+            
+        ControlaIps::salvarIps($arr);
 
         ControlaIps::getIp2();
     }
@@ -73,25 +68,33 @@ class ControlaIps extends ResourceController
     {
         //pega os dados que a pagina retorna
         $conteudo = file_get_contents('https://onionoo.torproject.org/summary?limit=5000');
-        $val = "a";
-        $arr = [];
+        
+        $arr = ControlaIps::formataArray($conteudo);
 
+        ControlaIps::salvarIps($arr);
+    }
+
+    private function formataArray(){
         //pega dados que veio em formato json e transforma em array
         $infor = json_decode($conteudo, true);
         $dados = $infor["relays"];
         
         //pega o array criado e filtra pegando o valro referente a chave 'a' que e o ip
         foreach ($dados as $a) {
-            array_push($arr, $a["a"]);
-            
+            $a = $a["a"];
+            array_push($arr, $a[0]); 
         }
 
-        //percorre o array de ips salvando no banco de dados
-        foreach ($arr as $a) {
+        return $arr;
+    }
+
+    //percorre o array de ips salvando no banco de dados
+    private function salvarIps($listaIps){
+        foreach ($listaIps as $a) {
             $this->todosIpsModel->save([
-                'ip' => $a[0]
+                'ip' => $a
             ]);
-        }  
+        } 
     }
 
     //inserre um novo ip
@@ -102,35 +105,22 @@ class ControlaIps extends ResourceController
         //pega ip inserido na requisicao
         $novoIp = $this->request->getpost();
         
-        try
+        if($this->filtrarIpsModel-> save([
+            'ip' => $novoIp
+        ]))
         {
-            if($this->filtrarIpsModel-> save([
-                'ip' => $novoIp
-            ]))
-            {
-                $retorno = [
-                    'titulo' => 'secesso',
-                    'msg' => 'Ip adicionado com sucesso'
-                ];
-            }
-            else
-            {
-                $retorno = [
-                    'titulo' => 'erro',
-                    'msg' => 'erro ao salvar o ip',
-                    'erro' => $this->filtrarIpsModel->errors()
-                ];
-            }
+            $retorno = [
+                'titulo' => 'secesso',
+                'msg' => 'Ip adicionado com sucesso'
+            ];
         }
-        catch (Exception $e)
+        else
         {
             $retorno = [
                 'titulo' => 'erro',
                 'msg' => 'erro ao salvar o ip',
-                'erro' => [
-                    'exception' => $e->getMessage()
-                ]
-            ]; 
+                'erro' => $this->filtrarIpsModel->errors()
+            ];
         }
 
         return $this->response->setJson($retorno);
