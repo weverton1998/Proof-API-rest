@@ -58,7 +58,7 @@ class ControlaIps extends ResourceController
         //converte os dados que a pagina retorno em formato de String para um array
         $ips = explode("\n", $conteudo);
             
-        ControlaIps::salvarIps($arr);
+        ControlaIps::salvarIps($ips);
 
         ControlaIps::getIp2();
     }
@@ -74,14 +74,16 @@ class ControlaIps extends ResourceController
         ControlaIps::salvarIps($arr);
     }
 
-    private function formataArray(){
+    private function formataArray($conteudo){
         //pega dados que veio em formato json e transforma em array
         $infor = json_decode($conteudo, true);
         $dados = $infor["relays"];
+        $arr = [];
         
         //pega o array criado e filtra pegando o valro referente a chave 'a' que e o ip
-        foreach ($dados as $a) {
+        foreach ($dados as $a) { 
             $a = $a["a"];
+            
             array_push($arr, $a[0]); 
         }
 
